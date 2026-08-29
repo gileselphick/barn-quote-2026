@@ -181,6 +181,30 @@
 </div>
 
 <style>
+
+  <!-- LIGHTBOX -->
+<div id="lightbox">
+  <span id="close">&times;</span>
+
+  <span id="prev" class="nav">&#10094;</span>
+
+  <div id="viewport">
+    <div id="pan-container">
+      <img id="lightbox-img" src="">
+    </div>
+  </div>
+
+  <div id="zoom-controls">
+    <span>-</span>
+    <input type="range" id="zoom-slider" min="1" max="4" step="0.1" value="1">
+    <span>+</span>
+  </div>
+
+  <span id="next" class="nav">&#10095;</span>
+</div>
+
+<style>
+  /* FULLSCREEN OVERLAY */
   #lightbox {
     position: fixed;
     top: 0; left: 0;
@@ -193,39 +217,53 @@
     z-index: 999;
   }
 
+  /* CENTRED VIEWPORT */
   #viewport {
     width: 90vw;
     height: 75vh;
-    overflow: hidden;
     position: relative;
+    overflow: hidden; /* prevents image escaping */
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 10;
   }
 
+  /* DRAGGABLE CONTAINER */
+  #pan-container {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: grab;
+  }
+
+  /* IMAGE */
   #lightbox-img {
     max-width: 100%;
     max-height: 100%;
-    object-fit: contain;
+    object-fit: contain; /* portrait images fit perfectly */
     transform-origin: center center;
     transition: transform 0.1s ease-out;
-    cursor: grab;
-    position: absolute;
+    pointer-events: none; /* prevents image blocking drag */
   }
 
+  /* ZOOM SLIDER */
   #zoom-controls {
     margin-top: 15px;
     display: flex;
     align-items: center;
     gap: 10px;
-    z-index: 20; /* Always above image */
+    z-index: 1000; /* always above image */
   }
 
   #zoom-slider {
     width: 300px;
   }
 
+  /* ARROWS */
   .nav {
     position: absolute;
     top: 50%;
@@ -233,12 +271,13 @@
     color: white;
     cursor: pointer;
     user-select: none;
-    z-index: 30; /* Always above image */
+    z-index: 2000; /* always above image */
   }
 
   #prev { left: 30px; }
   #next { right: 30px; }
 
+  /* CLOSE BUTTON */
   #close {
     position: absolute;
     top: 20px;
@@ -246,14 +285,14 @@
     font-size: 40px;
     color: white;
     cursor: pointer;
-    z-index: 40; /* Always above everything */
+    z-index: 3000; /* highest */
   }
 </style>
 
 <script>
   const images = [...document.querySelectorAll('.thumb')];
   const lightbox = document.getElementById('lightbox');
-  const viewport = document.getElementById('viewport');
+  const panContainer = document.getElementById('pan-container');
   const lightboxImg = document.getElementById('lightbox-img');
   const zoomSlider = document.getElementById('zoom-slider');
 
@@ -266,7 +305,7 @@
     offsetX = 0;
     offsetY = 0;
     zoomSlider.value = 1;
-    lightboxImg.style.transform = "translate(0px, 0px) scale(1)";
+    panContainer.style.transform = `translate(0px, 0px) scale(1)`;
   }
 
   function showLightbox(i) {
@@ -297,28 +336,28 @@
 
   zoomSlider.addEventListener('input', () => {
     const zoom = zoomSlider.value;
-    lightboxImg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${zoom})`;
+    panContainer.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${zoom})`;
   });
 
-  lightboxImg.addEventListener('mousedown', (e) => {
+  panContainer.addEventListener('mousedown', (e) => {
     if (zoomSlider.value > 1) {
       isDragging = true;
       startX = e.clientX - offsetX;
       startY = e.clientY - offsetY;
-      lightboxImg.style.cursor = "grabbing";
+      panContainer.style.cursor = "grabbing";
     }
   });
 
   document.addEventListener('mouseup', () => {
     isDragging = false;
-    lightboxImg.style.cursor = "grab";
+    panContainer.style.cursor = "grab";
   });
 
   document.addEventListener('mousemove', (e) => {
     if (isDragging) {
       offsetX = e.clientX - startX;
       offsetY = e.clientY - startY;
-      lightboxImg.style.transform =
+      panContainer.style.transform =
         `translate(${offsetX}px, ${offsetY}px) scale(${zoomSlider.value})`;
     }
   });
@@ -329,6 +368,7 @@
     if (e.key === 'ArrowLeft') document.getElementById('prev').click();
   });
 </script>
+
 
 </body>
 </html>

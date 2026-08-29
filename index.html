@@ -144,19 +144,48 @@
 <div id="lightbox">
   <span id="close">&times;</span>
   <span id="prev" class="nav">&#10094;</span>
-  <img id="lightbox-img" src="">
+
+  <div id="lightbox-content">
+    <img id="lightbox-img" src="">
+    <input type="range" id="zoom-slider" min="1" max="4" step="0.1" value="1">
+  </div>
+
   <span id="next" class="nav">&#10095;</span>
 </div>
+
+<style>
+  #lightbox-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+  }
+
+  #zoom-slider {
+    width: 300px;
+    cursor: pointer;
+  }
+
+  #lightbox-img {
+    transition: transform 0.1s ease-out;
+  }
+</style>
 
 <script>
   const images = [...document.querySelectorAll('.thumb')];
   const lightbox = document.getElementById('lightbox');
   const lightboxImg = document.getElementById('lightbox-img');
+  const zoomSlider = document.getElementById('zoom-slider');
   let index = 0;
 
   function showLightbox(i) {
     index = i;
     lightboxImg.src = images[i].src;
+
+    // Reset zoom when opening a new image
+    zoomSlider.value = 1;
+    lightboxImg.style.transform = "scale(1)";
+
     lightbox.style.display = 'flex';
   }
 
@@ -170,14 +199,21 @@
 
   document.getElementById('next').onclick = () => {
     index = (index + 1) % images.length;
-    lightboxImg.src = images[index].src;
+    showLightbox(index);
   };
 
   document.getElementById('prev').onclick = () => {
     index = (index - 1 + images.length) % images.length;
-    lightboxImg.src = images[index].src;
+    showLightbox(index);
   };
 
+  // Zoom slider logic
+  zoomSlider.addEventListener('input', () => {
+    const zoom = zoomSlider.value;
+    lightboxImg.style.transform = `scale(${zoom})`;
+  });
+
+  // Keyboard shortcuts
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') lightbox.style.display = 'none';
     if (e.key === 'ArrowRight') document.getElementById('next').click();

@@ -25,6 +25,13 @@
     font-weight: 300;
   }
 
+  h2 {
+    margin: 10px 20px;
+    font-weight: 300;
+    border-bottom: 1px solid #333;
+    padding-bottom: 5px;
+  }
+
   .gallery {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -35,7 +42,7 @@
   .thumb {
     width: 100%;
     height: 180px;
-    object-fit: cover; /* makes vertical + horizontal images uniform */
+    object-fit: cover;
     border-radius: 6px;
     cursor: pointer;
     transition: 0.2s;
@@ -92,8 +99,9 @@
   <h1>Barn | August 2026 Quote Album</h1>
 </header>
 
+<!-- ================= FRONT SECTION ================= -->
+<h2>Front Elevation</h2>
 <div class="gallery">
-  <!-- ADD ALL YOUR IMAGES HERE -->
   <img class="thumb" src="Front Barn Cladding Whole 1.jpg" alt="">
   <img class="thumb" src="Front Barn Cladding Whole 2.jpg" alt="">
   <img class="thumb" src="Front Barn Cladding Main Door.jpg" alt="">
@@ -104,6 +112,11 @@
   <img class="thumb" src="Front Barn Main Door.jpg" alt="">
   <img class="thumb" src="Front Barn Right Kitchen Stable Door.jpg" alt="">
   <img class="thumb" src="Front Barn Roof Edge Kitchen Door.jpg" alt="">
+</div>
+
+<!-- ================= REAR SECTION ================= -->
+<h2>Rear Elevation</h2>
+<div class="gallery">
   <img class="thumb" src="Rear Barn Access.jpg" alt="">
   <img class="thumb" src="Rear Barn Chimney 1.jpg" alt="">
   <img class="thumb" src="Rear Barn Chimney 2.jpg" alt="">
@@ -117,6 +130,11 @@
   <img class="thumb" src="Rear Barn Large Window Sill Right Barn Door.jpg" alt="">
   <img class="thumb" src="Rear Barn Left Barn Door.jpg" alt="">
   <img class="thumb" src="Rear Barn Right Barn Door.jpg" alt="">
+</div>
+
+<!-- ================= RIGHT SIDE SECTION ================= -->
+<h2>Right Side Elevation</h2>
+<div class="gallery">
   <img class="thumb" src="Right Barn Side Path Access.jpg" alt="">
   <img class="thumb" src="Right Barn Side Path Cladding 1.jpg" alt="">
   <img class="thumb" src="Right Barn Side Path Cladding 2.jpg" alt="">
@@ -124,4 +142,31 @@
 
 <!-- LIGHTBOX -->
 <div id="lightbox">
-  <span id="close">
+  <span id="close">&times;</span>
+  <span id="prev" class="nav">&#10094;</span>
+  <img id="lightbox-img" src="">
+  <span id="next" class="nav">&#10095;</span>
+</div>
+
+<script>
+  const images = [...document.querySelectorAll('.thumb')];
+  const lightbox = document.getElementById('lightbox');
+  const lightboxImg = document.getElementById('lightbox-img');
+  let index = 0;
+
+  function showLightbox(i) {
+    index = i;
+    lightboxImg.src = images[i].src;
+    lightbox.style.display = 'flex';
+  }
+
+  images.forEach((img, i) => {
+    img.addEventListener('click', () => showLightbox(i));
+  });
+
+  document.getElementById('close').onclick = () => {
+    lightbox.style.display = 'none';
+  };
+
+  document.getElementById('next').onclick = () => {
+    index = (index + 1) % images.length;

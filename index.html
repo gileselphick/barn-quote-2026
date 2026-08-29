@@ -170,3 +170,20 @@
 
   document.getElementById('next').onclick = () => {
     index = (index + 1) % images.length;
+    lightboxImg.src = images[index].src;
+  };
+
+  document.getElementById('prev').onclick = () => {
+    index = (index - 1 + images.length) % images.length;
+    lightboxImg.src = images[index].src;
+  };
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') lightbox.style.display = 'none';
+    if (e.key === 'ArrowRight') document.getElementById('next').click();
+    if (e.key === 'ArrowLeft') document.getElementById('prev').click();
+  });
+</script>
+
+</body>
+</html>

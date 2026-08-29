@@ -143,6 +143,7 @@
 <!-- LIGHTBOX -->
 <div id="lightbox">
   <span id="close">&times;</span>
+
   <span id="prev" class="nav">&#10094;</span>
 
   <div id="viewport">
@@ -159,14 +160,27 @@
 </div>
 
 <style>
+  #lightbox {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.9);
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+  }
+
   #viewport {
     width: 90vw;
-    height: 80vh;
+    height: 75vh;
     overflow: hidden;
     position: relative;
     display: flex;
     justify-content: center;
     align-items: center;
+    z-index: 10;
   }
 
   #lightbox-img {
@@ -184,11 +198,34 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    z-index: 1000;
+    z-index: 20; /* Always above image */
   }
 
   #zoom-slider {
     width: 300px;
+  }
+
+  .nav {
+    position: absolute;
+    top: 50%;
+    font-size: 50px;
+    color: white;
+    cursor: pointer;
+    user-select: none;
+    z-index: 30; /* Always above image */
+  }
+
+  #prev { left: 30px; }
+  #next { right: 30px; }
+
+  #close {
+    position: absolute;
+    top: 20px;
+    right: 30px;
+    font-size: 40px;
+    color: white;
+    cursor: pointer;
+    z-index: 40; /* Always above everything */
   }
 </style>
 
@@ -204,72 +241,10 @@
   let startX, startY;
   let offsetX = 0, offsetY = 0;
 
-  function resetImagePosition() {
+  function resetImage() {
     offsetX = 0;
     offsetY = 0;
-    lightboxImg.style.transform = `translate(0px, 0px) scale(1)`;
-  }
 
-  function showLightbox(i) {
-    index = i;
-    lightboxImg.src = images[i].src;
-
-    zoomSlider.value = 1;
-    resetImagePosition();
-
-    lightbox.style.display = 'flex';
-  }
-
-  images.forEach((img, i) => {
-    img.addEventListener('click', () => showLightbox(i));
-  });
-
-  document.getElementById('close').onclick = () => {
-    lightbox.style.display = 'none';
-  };
-
-  document.getElementById('next').onclick = () => {
-    index = (index + 1) % images.length;
-    showLightbox(index);
-  };
-
-  document.getElementById('prev').onclick = () => {
-    index = (index - 1 + images.length) % images.length;
-    showLightbox(index);
-  };
-
-  zoomSlider.addEventListener('input', () => {
-    const zoom = zoomSlider.value;
-    lightboxImg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${zoom})`;
-  });
-
-  lightboxImg.addEventListener('mousedown', (e) => {
-    if (zoomSlider.value > 1) {
-      isDragging = true;
-      startX = e.clientX - offsetX;
-      startY = e.clientY - offsetY;
-      lightboxImg.style.cursor = "grabbing";
-    }
-  });
-
-  document.addEventListener('mouseup', () => {
-    isDragging = false;
-    lightboxImg.style.cursor = "grab";
-  });
-
-  document.addEventListener('mousemove', (e) => {
-    if (isDragging) {
-      offsetX = e.clientX - startX;
-      offsetY = e.clientY - startY;
-      lightboxImg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${zoomSlider.value})`;
-    }
-  });
-
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') lightbox.style.display = 'none';
-    if (e.key === 'ArrowRight') document.getElementById('next').click();
-    if (e.key === 'ArrowLeft') document.getElementById('prev').click();
-  });
 </script>
 
 </body>

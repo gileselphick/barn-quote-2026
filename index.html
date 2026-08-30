@@ -65,7 +65,6 @@
     z-index: 999;
   }
 
-  /* VIEWPORT */
   #viewport {
     width: 90vw;
     height: 75vh;
@@ -76,7 +75,6 @@
     align-items: center;
   }
 
-  /* DRAGGABLE CONTAINER */
   #pan-container {
     position: absolute;
     top: 0; left: 0;
@@ -88,7 +86,6 @@
     cursor: grab;
   }
 
-  /* IMAGE */
   #lightbox-img {
     max-width: 100%;
     max-height: 100%;
@@ -98,7 +95,6 @@
     pointer-events: none;
   }
 
-  /* ZOOM SLIDER */
   #zoom-controls {
     margin-top: 15px;
     display: flex;
@@ -111,7 +107,6 @@
     width: 300px;
   }
 
-  /* ARROWS */
   .nav {
     position: absolute;
     top: 50%;
@@ -125,7 +120,6 @@
   #prev { left: 30px; }
   #next { right: 30px; }
 
-  /* CLOSE BUTTON */
   #close {
     position: absolute;
     top: 20px;
@@ -135,16 +129,91 @@
     cursor: pointer;
     z-index: 4000;
   }
+
+  /* PIN MODAL */
+  #pin-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+  }
+
+  #pin-modal {
+    background: #1e1e1e;
+    padding: 25px 30px;
+    border-radius: 8px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.7);
+    max-width: 320px;
+    width: 90%;
+    text-align: center;
+  }
+
+  #pin-modal h2 {
+    margin: 0 0 15px;
+    font-weight: 300;
+    border: none;
+    padding: 0;
+  }
+
+  #pin-input {
+    padding: 10px;
+    font-size: 18px;
+    width: 100%;
+    text-align: center;
+    border-radius: 6px;
+    border: none;
+    outline: none;
+    margin-bottom: 15px;
+    box-sizing: border-box;
+  }
+
+  #pin-submit {
+    padding: 10px 20px;
+    font-size: 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    background: #f0f0f0;
+    color: #111;
+    width: 100%;
+  }
+
+  #pin-error {
+    color: #ff6b6b;
+    margin-top: 10px;
+    min-height: 18px;
+    font-size: 14px;
+  }
+
+  #pin-denied {
+    color: #ff6b6b;
+    margin-top: 10px;
+    font-size: 14px;
+  }
 </style>
 </head>
 
 <body>
 
+<!-- PIN OVERLAY -->
+<div id="pin-overlay">
+  <div id="pin-modal">
+    <h2>Enter Access PIN</h2>
+    <input id="pin-input" type="password" placeholder="PIN">
+    <button id="pin-submit">Submit</button>
+    <div id="pin-error"></div>
+    <div id="pin-denied" style="display:none;">Access denied: invalid link token.</div>
+  </div>
+</div>
+
 <header>
   <h1>Barn | August 2026 Quote Album</h1>
 </header>
 
-<!-- ================= FRONT SECTION ================= -->
 <h2>Front Elevation</h2>
 <div class="gallery">
   <img class="thumb" src="Front Barn Cladding Whole 1.jpg" alt="">
@@ -159,7 +228,6 @@
   <img class="thumb" src="Front Barn Roof Edge Kitchen Door.jpg" alt="">
 </div>
 
-<!-- ================= REAR SECTION ================= -->
 <h2>Rear Elevation</h2>
 <div class="gallery">
   <img class="thumb" src="Rear Barn Access.jpg" alt="">
@@ -177,7 +245,6 @@
   <img class="thumb" src="Rear Barn Right Barn Door.jpg" alt="">
 </div>
 
-<!-- ================= RIGHT SIDE SECTION ================= -->
 <h2>Right Side Elevation</h2>
 <div class="gallery">
   <img class="thumb" src="Right Barn Side Path Access.jpg" alt="">
@@ -206,6 +273,95 @@
 </div>
 
 <script>
+  // --- SECURITY CONFIG ---
+
+  // Tokens (T2)
+  const VALID_TOKENS = {
+    "tkn_8F92k3Q": "CLADDING",
+    "tkn_AA91ff2Z": "ROOF",
+    "tkn_ZKQ92Lx7": "GUEST"
+  };
+
+  // Simple "encryption": store base64 of PINs
+  const ENCRYPTED_PINS = {
+    "CLADDING": btoa("8346"),
+    "ROOF":     btoa("7654"),
+    "GUEST":    btoa("2975")
+  };
+
+  let attempts = 0;
+  let lockedUntil = null;
+
+  const pinOverlay = document.getElementById("pin-overlay");
+  const pinInput   = document.getElementById("pin-input");
+  const pinSubmit  = document.getElementById("pin-submit");
+  const pinError   = document.getElementById("pin-error");
+  const pinDenied  = document.getElementById("pin-denied");
+
+  // Get token from URL
+  const params = new URLSearchParams(window.location.search);
+  const token  = params.get("token");
+  const accessRole = token && VALID_TOKENS[token] ? VALID_TOKENS[token] : null;
+
+  if (!accessRole) {
+    // Invalid or missing token: deny access, keep overlay
+    pinInput.disabled = true;
+    pinSubmit.disabled = true;
+    pinDenied.style.display = "block";
+    pinError.textContent = "";
+  }
+
+  function checkLockout() {
+    if (!lockedUntil) return false;
+    const now = Date.now();
+    if (now < lockedUntil) {
+      const remaining = Math.ceil((lockedUntil - now) / 60000);
+      pinError.textContent = `Too many attempts. Try again in ~${remaining} minute(s).`;
+      return true;
+    } else {
+      lockedUntil = null;
+      attempts = 0;
+      return false;
+    }
+  }
+
+  function handlePinSubmit() {
+    if (!accessRole) return;
+
+    if (checkLockout()) return;
+
+    const entered = pinInput.value.trim();
+    if (!entered) {
+      pinError.textContent = "Please enter a PIN.";
+      return;
+    }
+
+    const encryptedEntered = btoa(entered);
+    const expectedEncrypted = ENCRYPTED_PINS[accessRole];
+
+    if (encryptedEntered === expectedEncrypted) {
+      // Correct PIN: unlock page
+      pinOverlay.style.display = "none";
+      pinError.textContent = "";
+      attempts = 0;
+    } else {
+      attempts++;
+      if (attempts >= 5) {
+        lockedUntil = Date.now() + 10 * 60 * 1000; // 10 minutes
+        pinError.textContent = "Too many incorrect attempts. Locked for 10 minutes.";
+      } else {
+        pinError.textContent = `Incorrect PIN (attempt ${attempts}/5).`;
+      }
+    }
+  }
+
+  pinSubmit.addEventListener("click", handlePinSubmit);
+  pinInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") handlePinSubmit();
+  });
+
+  // --- LIGHTBOX / GALLERY ---
+
   const images = [...document.querySelectorAll('.thumb')];
   const lightbox = document.getElementById('lightbox');
   const panContainer = document.getElementById('pan-container');

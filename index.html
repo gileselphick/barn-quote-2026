@@ -331,40 +331,51 @@
     }
   }
 
-  function handlePinSubmit() {
+function handlePinSubmit() {
     if (!accessRole) return;
 
     if (checkLockout()) return;
 
     const entered = pinInput.value.trim();
     if (!entered) {
-      pinError.textContent = "Please enter a PIN.";
-      return;
+        pinError.textContent = "Please enter a PIN.";
+        return;
     }
 
     const encryptedEntered = btoa(entered);
     const expectedEncrypted = ENCRYPTED_PINS[accessRole];
 
     if (encryptedEntered === expectedEncrypted) {
-      // Correct PIN: unlock page
-      pinOverlay.style.display = "none";
-      pinError.textContent = "";
-      attempts = 0;
+        // Correct PIN: unlock page
+        sessionStorage.setItem("pinValidated", "true");   // ⭐ NEW LINE
+        pinOverlay.style.display = "none";
+        pinError.textContent = "";
+        attempts = 0;
     } else {
-      attempts++;
-      if (attempts >= 5) {
-        lockedUntil = Date.now() + 10 * 60 * 1000; // 10 minutes
-        pinError.textContent = "Too many incorrect attempts. Locked for 10 minutes.";
-      } else {
-        pinError.textContent = `Incorrect PIN (attempt ${attempts}/5).`;
-      }
+        attempts++;
+        if (attempts >= 5) {
+            lockedUntil = Date.now() + 10 * 60 * 1000; // 10 minutes
+            pinError.textContent = "Too many incorrect attempts. Locked for 10 minutes.";
+        } else {
+            pinError.textContent = `Incorrect PIN (attempt ${attempts}/5).`;
+        }
     }
-  }
+}
 
-  pinSubmit.addEventListener("click", handlePinSubmit);
-  pinInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") handlePinSubmit();
-  });
+pinSubmit.addEventListener("click", handlePinSubmit);
+
+pinInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+        handlePinSubmit();
+    }
+});
+
+// ⭐ Auto‑unlock if already validated this session
+window.onload = function () {
+    if (sessionStorage.getItem("pinValidated") === "true") {
+        pinOverlay.style.display = "none";
+    }
+};
 
   // --- LIGHTBOX / GALLERY ---
 
